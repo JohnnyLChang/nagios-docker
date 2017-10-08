@@ -1,5 +1,10 @@
 FROM ubuntu:16.04
-MAINTAINER Jason Rivers <jason@jasonrivers.co.uk>
+
+LABEL name="Nagios Monitoring" \
+      nagios.core.version="4.3.4" \
+      nagios.plugins.version="2.2.1" \
+      nagios.plugins.nrpe.version="3.2.1" \
+      maintainer="Christos Manios <maniopaido@gmail.com>"
 
 ENV NAGIOS_HOME            /opt/nagios
 ENV NAGIOS_USER            nagios
@@ -11,7 +16,8 @@ ENV NAGIOSADMIN_USER       nagiosadmin
 ENV NAGIOSADMIN_PASS       nagios
 ENV APACHE_RUN_USER        nagios
 ENV APACHE_RUN_GROUP       nagios
-ENV NAGIOS_TIMEZONE        UTC
+# TODO Add configurable timezone
+ENV NAGIOS_TIMEZONE        Europe/Athens
 ENV DEBIAN_FRONTEND        noninteractive
 ENV NG_NAGIOS_CONFIG_FILE  ${NAGIOS_HOME}/etc/nagios.cfg
 ENV NG_CGI_DIR             ${NAGIOS_HOME}/sbin
@@ -83,15 +89,6 @@ RUN ( egrep -i "^${NAGIOS_GROUP}"    /etc/group || groupadd $NAGIOS_GROUP    )  
 RUN ( id -u $NAGIOS_USER    || useradd --system -d $NAGIOS_HOME -g $NAGIOS_GROUP    $NAGIOS_USER    )  && \
     ( id -u $NAGIOS_CMDUSER || useradd --system -d $NAGIOS_HOME -g $NAGIOS_CMDGROUP $NAGIOS_CMDUSER )
 
-RUN cd /tmp                                           && \
-    git clone https://github.com/multiplay/qstat.git  && \
-    cd qstat                                          && \
-    ./autogen.sh                                      && \
-    ./configure                                       && \
-    make                                              && \
-    make install                                      && \
-    make clean
-
 ## Nagios 4.3.1 has leftover debug code which spams syslog every 15 seconds
 ## Its fixed in 4.3.2 and the patch can be removed then
 
@@ -155,11 +152,14 @@ RUN cd /opt                                                                     
     git clone https://github.com/willixix/naglio-plugins.git     WL-Nagios-Plugins  && \
     git clone https://github.com/JasonRivers/nagios-plugins.git  JR-Nagios-Plugins  && \
     git clone https://github.com/justintime/nagios-plugins.git   JE-Nagios-Plugins  && \
+    git clone https://github.com/mzupan/nagios-plugin-mongodb.git   mongodb-plugin  && \
+    git clone https://github.com/andreisavu/zookeeper-monitoring  zookeeper-plugin  && \
     chmod +x /opt/WL-Nagios-Plugins/check*                                          && \
     chmod +x /opt/JE-Nagios-Plugins/check_mem/check_mem.pl                          && \
     cp /opt/JE-Nagios-Plugins/check_mem/check_mem.pl /opt/nagios/libexec/           && \
-    cp /opt/nagios/libexec/utils.sh /opt/JR-Nagios-Plugins/
-
+    cp /opt/nagios/libexec/utils.sh /opt/JR-Nagios-Plugins/                         && \
+    cp /opt/mongodb-plugin/check_mongodb.py  /opt/nagios/libexec/                   && \
+    cp /opt/zookeeper-plugin/check_zookeeper.py /opt/nagios/libexec/
 
 RUN sed -i.bak 's/.*\=www\-data//g' /etc/apache2/envvars
 RUN export DOC_ROOT="DocumentRoot $(echo $NAGIOS_HOME/share)"                         && \
