@@ -21,6 +21,12 @@ if [ ! -f "${NAGIOS_HOME}/etc/htpasswd.users" ] ; then
   chown -R nagios.nagios "${NAGIOS_HOME}/etc/htpasswd.users"
 fi
 
+if [ -z "$(ls -A /etc/ssmpt)" ]; then
+    echo "Started with empty ssmtp settings, copying example data in-place"
+    cp -Rp /orig/ssmtp/* /etc/ssmpt
+    chown -R nagios:nagios /etc/ssmpt
+fi
+
 shutdown() {
   echo Shutting Down
   ls /etc/service | SHELL=/bin/sh parallel --no-notice sv force-stop {}

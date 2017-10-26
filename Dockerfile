@@ -28,10 +28,7 @@ ENV NAGIOS_PLUGINS_BRANCH  release-2.2.1
 ENV NRPE_BRANCH            nrpe-3.2.1
 
 
-RUN echo postfix postfix/main_mailer_type string "'Internet Site'" | debconf-set-selections  && \
-    echo postfix postfix/mynetworks string "127.0.0.0/8" | debconf-set-selections            && \
-    echo postfix postfix/mailname string ${NAGIOS_FQDN} | debconf-set-selections             && \
-    apt-get update && apt-get install -y    \
+RUN apt-get update && apt-get install -y    \
         apache2                             \
         apache2-utils                       \
         autoconf                            \
@@ -74,7 +71,7 @@ RUN echo postfix postfix/main_mailer_type string "'Internet Site'" | debconf-set
         parallel                            \
         php-cli                             \
         php-gd                              \
-        postfix                             \
+        ssmtp                               \
         rsyslog                             \
         runit                               \
         snmp                                \
@@ -182,9 +179,6 @@ RUN mkdir -p -m 0755 /usr/share/snmp/mibs                     && \
 RUN sed -i 's,/bin/mail,/usr/bin/mail,' /opt/nagios/etc/objects/commands.cfg  && \
     sed -i 's,/usr/usr,/usr,'           /opt/nagios/etc/objects/commands.cfg
 
-RUN cp /etc/services /var/spool/postfix/etc/  && \
-    echo "smtp_address_preference = ipv4" >> /etc/postfix/main.cf
-
 RUN rm -rf /etc/rsyslog.d /etc/rsyslog.conf
 
 RUN rm -rf /etc/sv/getty-5
@@ -204,7 +198,9 @@ RUN echo "use_timezone=${NAGIOS_TIMEZONE}" >> /opt/nagios/etc/nagios.cfg
 RUN mkdir -p /orig/var && mkdir -p /orig/etc  && \
     chown -R nagios:nagios /opt/nagios/var    && \
     cp -Rp /opt/nagios/var/* /orig/var/       && \
-    cp -Rp /opt/nagios/etc/* /orig/etc/
+    cp -Rp /opt/nagios/etc/* /orig/etc/       && \
+    mkdir -p /orig/ssmtp                      && \
+    cp -Rp /etc/ssmtp/*  /orig/ssmtp/
 
 # Install pip and pymongo
 RUN wget https://bootstrap.pypa.io/get-pip.py && \
@@ -220,7 +216,6 @@ RUN a2enmod session         && \
 
 ADD nagios.init /etc/sv/nagios/run
 ADD apache.init /etc/sv/apache/run
-ADD postfix.init /etc/sv/postfix/run
 ADD rsyslog.init /etc/sv/rsyslog/run
 ADD start.sh /usr/local/bin/start_nagios
 RUN chmod +x /usr/local/bin/start_nagios
