@@ -81,6 +81,7 @@ RUN echo postfix postfix/main_mailer_type string "'Internet Site'" | debconf-set
         snmpd                               \
         snmp-mibs-downloader                \
         unzip                               \
+        python                              \
                                                 && \
     apt-get clean && rm -Rf /var/lib/apt/lists/*
 
@@ -200,8 +201,15 @@ RUN echo "use_timezone=${NAGIOS_TIMEZONE}" >> /opt/nagios/etc/nagios.cfg
 # Copy example config in-case the user has started with empty var or etc
 
 RUN mkdir -p /orig/var && mkdir -p /orig/etc  && \
+    chown -R nagios:nagios /opt/nagios/var    && \
     cp -Rp /opt/nagios/var/* /orig/var/       && \
     cp -Rp /opt/nagios/etc/* /orig/etc/
+
+# Install pip and pymongo
+RUN wget https://bootstrap.pypa.io/get-pip.py && \
+    python get-pip.py                         && \
+    python -m pip install pymongo             && \
+    rm get-pip.py
 
 RUN a2enmod session         && \
     a2enmod session_cookie  && \
