@@ -7,11 +7,13 @@
 if [ -z "$(ls -A /opt/nagios/etc)" ]; then
     echo "Started with empty ETC, copying example data in-place"
     cp -Rp /orig/etc/* /opt/nagios/etc/
+    chown -R nagios:nagios /opt/nagios/etc
 fi
 
 if [ -z "$(ls -A /opt/nagios/var)" ]; then
     echo "Started with empty VAR, copying example data in-place"
     cp -Rp /orig/var/* /opt/nagios/var/
+    chown -R nagios:nagios /opt/nagios/var
 fi
 
 if [ ! -f "${NAGIOS_HOME}/etc/htpasswd.users" ] ; then
